@@ -1,3 +1,5 @@
+//Seans fork to convert to PWM and 12 bit ADC
+
 #include <avr/pgmspace.h>
 #include <Wire.h>
 #include <Adafruit_GFX.h>
