@@ -1,5 +1,10 @@
 //Seans fork to convert to PWM and 12 bit ADC
 
+// CHat gpt
+#include <Arduino.h>
+//
+
+
 #include <avr/pgmspace.h>
 #include <Wire.h>
 #include <Adafruit_GFX.h>
@@ -46,9 +51,16 @@ long int last_trigger_out_millis = millis();
 
 
 /////////// ROTARY ENCODERS //////////
-
+/*
 uint8_t volatile D10D11_state = 0b1111;
 uint8_t volatile D6D7_state = 0b1111;
+*/
+const int encoderPinA = 2; // Channel A
+const int encoderPinB = 3; // Channel B
+
+
+volatile int encoderPosition = 0; // Variable to store the encoder position
+volatile int lastEncoded = 0;     // Variable to store the last encoded value
 
 int8_t volatile new_root = 0;
 int8_t volatile new_scale = 0;
@@ -59,19 +71,24 @@ bool volatile rotary_change = false;
 void setup() {
 
   //////// ROTARY ENCODER INTERRUPTS AND PINS ////////
+/*
+  pinMode(PA2, INPUT);
+  pinMode(PA3, INPUT);
+  pinMode(PA5, INPUT);
+  pinMode(PA6, INPUT);
+*/
+    pinMode(encoderPinA, INPUT);
+    pinMode(encoderPinB, INPUT);
+    // Attach interrupts to the encoder pins
+    attachInterrupt(digitalPinToInterrupt(encoderPinA), handleEncoderInterrupt, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(encoderPinB), handleEncoderInterrupt, CHANGE);
 
-  pinMode(10, INPUT);
-  pinMode(11, INPUT);
-  pinMode(6, INPUT);
-  pinMode(7, INPUT);
-
-
-  cli();
+/*  cli();
   PCICR |= 0b00000101;
   PCMSK0 |= 0b00001100;
   PCMSK2 |= 0b11000000;
   sei();
-
+*/
   ////////////////////////////////////////////////////
 
   Serial.begin(115200);
@@ -448,9 +465,12 @@ void drawKeyboard(int16_t scale, int8_t root, int8_t origin_key) {
 
 
 ///////////// KEY OF ISR
-ISR(PCINT0_vect) {
-  D10D11_state = (D10D11_state << 1) | digitalRead(10);
-  D10D11_state = (D10D11_state << 1) | digitalRead(11);
+//ISR(PCINT0_vect) {
+void handleEncoderInterrupt() { 
+
+  /*
+  D10D11_state = (D10D11_state << 1) | digitalRead(PA2);
+  D10D11_state = (D10D11_state << 1) | digitalRead(PA3);
 
 
   if ((D10D11_state & 0b1111) == 0b0111) {
@@ -466,13 +486,30 @@ ISR(PCINT0_vect) {
   }
 
   rotary_change = true;
+*/
+    // Read the current state of the encoder pins
+    int MSB = digitalRead(encoderPinA); // MSB = most significant bit
+    int LSB = digitalRead(encoderPinB); // LSB = least significant bit
+
+    int encoded = (MSB << 1) | LSB; // Combine the two pin values
+    int sum = (lastEncoded << 2) | encoded; // Calculate the change in the encoder state
+
+    // Determine the direction and update the position
+    if (sum == 0b1101 || sum == 0b0100 || sum == 0b0010 || sum == 0b1011) {
+        encoderPosition++;
+    } else if (sum == 0b1110 || sum == 0b0111 || sum == 0b0001 || sum == 0b1000) {
+        encoderPosition--;
+    }
+
+    lastEncoded = encoded; // Store the current encoded value
 }
 
 
+/*
 //////////// NEW SCALE ENCODER ISR
 ISR(PCINT2_vect) {
-  D6D7_state = (D6D7_state << 1) | digitalRead(6);
-  D6D7_state = (D6D7_state << 1) | digitalRead(7);
+  D6D7_state = (D6D7_state << 1) | digitalRead(PA5);
+  D6D7_state = (D6D7_state << 1) | digitalRead(PA6);
 
   if ((D6D7_state & 0b1111) == 0b0111) {
     new_scale += 1;
@@ -486,7 +523,7 @@ ISR(PCINT2_vect) {
     new_scale = NUM_SCALES - 1;
   }
 }
-
+*/
 
 void change_layout_ISR() {
   layout_index = (layout_index + 1) % 2;
