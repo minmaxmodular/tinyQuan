@@ -2,15 +2,12 @@
 ///WORKKKIING
 
 #include "STM32encoder.h"
-STM32encoder enc(TIM2);
-
+STM32encoder enc(TIM2, 0x07);
 
 //#include <avr/pgmspace.h>
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
-//#include <MCP4725.h>
-//#include <ADS1X15.h>
 #include "definitions.h"
 
 //Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
@@ -24,13 +21,12 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT,
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
 
-//MCP4725 MCP(0x60);
-//ADS1115 ADS(0x48);
-
 
 //bool tuning_dac = false;
 //bool tuning_adc = false;
-
+bool direct_scale = false;
+bool direct_root = true;
+bool enc_scale_mode = false;
 
 bool volatile refresh_little_indicator = false;
 
@@ -76,7 +72,7 @@ void setup() {
 
   enc.setButton(PA2);					// set the button pin
   enc.attachButton(&change_layout_ISR);		// attach button isr. Must be called after setButton
-
+  enc.attach(&change_root_ISR);
 
 
   ////////////////////////////////////////////////////
@@ -161,7 +157,7 @@ void loop() {
 //  int16_t cv_to_quantize = ADS.readADC(0);
     int16_t cv_to_quantize = 20000;
 
-  Serial.println(cv_to_quantize);
+  //Serial.println(cv_to_quantize);
 
   if (reset_trigger_out && millis() - last_trigger_out_millis >= trigger_out_width) {
     digitalWrite(TRIGGER_OUT_PIN, LOW);
@@ -472,17 +468,53 @@ void drawKeyboard(int16_t scale, int8_t root, int8_t origin_key) {
 ////////////// End graphics ///////////////
 ///////////////////////////////////////////
 
-/*
 ///////////// KEY OF ISR
-//ISR(PCINT0_vect) {
-void change_root_direction() {
-  D10D11_state = (D10D11_state << 1) | digitalRead(PA0);
-  D10D11_state = (D10D11_state << 1) | digitalRead(PA1);
+///////////// KEY OF ISR
+/*
+void change_root_ISR() {
+    directr = enc.dir();
+
+    if (enc_scale_mode == 1) {
+        if (directr == 1) {
+          new_root += 1;
+        } else if (directr == 0) {
+          new_root -= 1;
+        }
+        if (new_root == NUM_NOTES) {
+          new_root = 0;
+        }
+        if (new_root == -1) {
+          new_root = NUM_NOTES - 1;
+        }
+
+        rotary_change = true;
+ 
+    ) else if (enc_scale_mode == 0) {
+        if (directr == 1) {
+          new_scale += 1;
+        } else if (directr == 0) {
+          new_scale -= 1;
+        }
+        if (new_scale == NUM_SCALES) {
+          new_scale = 0;
+        }
+        if (new_scale == -1) {
+          new_scale = NUM_SCALES - 1;
+        }
+    }
+)
+*/
 
 
-  if ((D10D11_state & 0b1111) == 0b0111) {
+void change_root_ISR() {
+//    direct_root = enc.dir();
+if (enc_scale_mode == true) {
+  direct_root = enc.dir();
+}
+    Serial.println(direct_root);
+  if (direct_root == 1) {
     new_root += 1;
-  } else if ((D10D11_state & 0b1111) == 0b1011) {
+  } else if (direct_root == 0) {
     new_root -= 1;
   }
   if (new_root == NUM_NOTES) {
@@ -493,17 +525,45 @@ void change_root_direction() {
   }
 
   rotary_change = true;
+
+
+
+////////////////
+
+if (enc_scale_mode == false) {
+  direct_scale = enc.dir();
+}
+    Serial.println(direct_scale);
+  if (direct_scale == 1) {
+    new_scale += 1;
+  } else if (direct_scale == 0) {
+    new_scale -= 1;
+  }
+  if (new_scale == NUM_SCALES) {
+    new_scale = 0;
+  }
+  if (new_scale == -1) {
+    new_scale = NUM_SCALES - 1;
+  }
+
+///////////////////////
+
+
+
 }
 
 
+/*
 //////////// NEW SCALE ENCODER ISR
-ISR(PCINT2_vect) {
-  D6D7_state = (D6D7_state << 1) | digitalRead(6);
-  D6D7_state = (D6D7_state << 1) | digitalRead(7);
-
-  if ((D6D7_state & 0b1111) == 0b0111) {
+void change_scale_ISR() {
+//    direct_scale = enc.dir();
+if (enc_scale_mode == 1) {
+  direct_scale = enc.dir();
+}
+    Serial.println(direct_scale);
+  if (direct_scale == 1) {
     new_scale += 1;
-  } else if ((D6D7_state & 0b1111) == 0b1011) {
+  } else if (direct_scale == 0) {
     new_scale -= 1;
   }
   if (new_scale == NUM_SCALES) {
@@ -516,8 +576,9 @@ ISR(PCINT2_vect) {
 */
 
 void change_layout_ISR() {
-  layout_index = (layout_index + 1) % 2;
-  refresh_layout = true;
+//  layout_index = (layout_index + 1) % 2;
+//  refresh_layout = true;
+  enc_scale_mode = !enc_scale_mode;
 }
 
 void change_cv_mode_ISR() {
