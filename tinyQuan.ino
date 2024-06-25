@@ -1,19 +1,34 @@
+
+
 //Seans fork to convert to PWM and 12 bit ADC
 
 // CHat gpt
-#include <Arduino.h>
+//#include <Arduino.h>
 //
 
-
-#include <avr/pgmspace.h>
 #include <Wire.h>
+#include <SPI.h>
+#include <avr/pgmspace.h>
+
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+#include <splash.h>
+
 #include <MCP4725.h>
 #include <ADS1X15.h>
 #include "definitions.h"
 
-Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+#define OLED_MOSI   PB3
+#define OLED_CLK   PB4
+#define OLED_DC    PB5
+#define OLED_CS    PB6
+#define OLED_RESET PB7
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, OLED_MOSI, OLED_CLK, OLED_DC, OLED_RESET, OLED_CS);
+//#include <SPI.h>
+//#include <Adafruit_GFX.h>
+//#include <Adafruit_SSD1306_STM32.h>
+
+//Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 MCP4725 MCP(0x60);
 ADS1115 ADS(0x48);
@@ -55,8 +70,8 @@ long int last_trigger_out_millis = millis();
 uint8_t volatile D10D11_state = 0b1111;
 uint8_t volatile D6D7_state = 0b1111;
 */
-const int encoderPinA = 2; // Channel A
-const int encoderPinB = 3; // Channel B
+const int encoderPinA = PA2; // Channel A
+const int encoderPinB = PA3; // Channel B
 
 
 volatile int encoderPosition = 0; // Variable to store the encoder position
@@ -93,10 +108,10 @@ void setup() {
 
   Serial.begin(115200);
 
-  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+//  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+  display.begin(SSD1306_SWITCHCAPVCC);
 
   pinMode(TRIGGER_OUT_PIN, OUTPUT);
-
   pinMode(LED_BUILTIN, OUTPUT);
 
   pinMode(CHANGE_CV_MODE_PIN, INPUT_PULLUP);
@@ -117,6 +132,9 @@ void setup() {
   ADS.begin();
   ADS.setGain(0);
 
+  display.display();
+  delay(2000);
+    display.drawPixel(10, 10, WHITE);
   display.clearDisplay();
   display.display();
 
@@ -209,7 +227,7 @@ void loop() {
   }
 
   uint8_t semitone_index = current_root_semitone + semitones_above_root_in_scale;
-  semitone_index = min(semitone_index, MAX_DAC_SEMITONE - 1);
+//  semitone_index = min(semitone_index, MAX_DAC_SEMITONE - 1);
   MCP.setValue((int16_t)pgm_read_word_near(semitone_cvs_dac + semitone_index));
 
 
@@ -496,12 +514,17 @@ void handleEncoderInterrupt() {
 
     // Determine the direction and update the position
     if (sum == 0b1101 || sum == 0b0100 || sum == 0b0010 || sum == 0b1011) {
-        encoderPosition++;
+          new_root += 1;
+//        encoderPosition++;
     } else if (sum == 0b1110 || sum == 0b0111 || sum == 0b0001 || sum == 0b1000) {
-        encoderPosition--;
+//        encoderPosition--;
+          new_root -= 1;
     }
-
+  if (new_root == -1) {
+    new_root = NUM_NOTES - 1;
+  }
     lastEncoded = encoded; // Store the current encoded value
+      rotary_change = true;
 }
 
 
