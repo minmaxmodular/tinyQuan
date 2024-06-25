@@ -2,9 +2,9 @@
 //#define CVIN_PIN A0
 //#define SCALE_PIN A2
 //#define KEY_OF_PIN A7
-#define CHANGE_LAYOUT_PIN PA4
-#define CHANGE_CV_MODE_PIN PA7
-#define TRIGGER_OUT_PIN PA8
+#define CHANGE_LAYOUT_PIN PB0
+#define CHANGE_CV_MODE_PIN PB1
+#define TRIGGER_OUT_PIN PB2
 
 
 #define SCREEN_WIDTH 128 // OLED display width, in pixels

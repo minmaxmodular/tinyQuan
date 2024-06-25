@@ -1,41 +1,32 @@
+///WORKKKIING
 
 
-//Seans fork to convert to PWM and 12 bit ADC
 
-// CHat gpt
-//#include <Arduino.h>
-//
-
+//#include <avr/pgmspace.h>
 #include <Wire.h>
-#include <SPI.h>
-#include <avr/pgmspace.h>
-
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
-#include <splash.h>
-
-#include <MCP4725.h>
-#include <ADS1X15.h>
+//#include <MCP4725.h>
+//#include <ADS1X15.h>
 #include "definitions.h"
 
+//Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 #define OLED_MOSI   PB3
 #define OLED_CLK   PB4
 #define OLED_DC    PB5
 #define OLED_CS    PB6
 #define OLED_RESET PB7
-Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, OLED_MOSI, OLED_CLK, OLED_DC, OLED_RESET, OLED_CS);
-//#include <SPI.h>
-//#include <Adafruit_GFX.h>
-//#include <Adafruit_SSD1306_STM32.h>
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT,
+  OLED_MOSI, OLED_CLK, OLED_DC, OLED_RESET, OLED_CS);
+#define SCREEN_WIDTH 128 // OLED display width, in pixels
+#define SCREEN_HEIGHT 64 // OLED display height, in pixels
 
-//Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
-
-MCP4725 MCP(0x60);
-ADS1115 ADS(0x48);
+//MCP4725 MCP(0x60);
+//ADS1115 ADS(0x48);
 
 
-bool tuning_dac = false;
-bool tuning_adc = false;
+//bool tuning_dac = false;
+//bool tuning_adc = false;
 
 
 bool volatile refresh_little_indicator = false;
@@ -66,16 +57,9 @@ long int last_trigger_out_millis = millis();
 
 
 /////////// ROTARY ENCODERS //////////
-/*
+
 uint8_t volatile D10D11_state = 0b1111;
 uint8_t volatile D6D7_state = 0b1111;
-*/
-const int encoderPinA = PA2; // Channel A
-const int encoderPinB = PA3; // Channel B
-
-
-volatile int encoderPosition = 0; // Variable to store the encoder position
-volatile int lastEncoded = 0;     // Variable to store the last encoded value
 
 int8_t volatile new_root = 0;
 int8_t volatile new_scale = 0;
@@ -86,19 +70,14 @@ bool volatile rotary_change = false;
 void setup() {
 
   //////// ROTARY ENCODER INTERRUPTS AND PINS ////////
-/*
-  pinMode(PA2, INPUT);
-  pinMode(PA3, INPUT);
-  pinMode(PA5, INPUT);
-  pinMode(PA6, INPUT);
-*/
-    pinMode(encoderPinA, INPUT);
-    pinMode(encoderPinB, INPUT);
-    // Attach interrupts to the encoder pins
-    attachInterrupt(digitalPinToInterrupt(encoderPinA), handleEncoderInterrupt, CHANGE);
-    attachInterrupt(digitalPinToInterrupt(encoderPinB), handleEncoderInterrupt, CHANGE);
 
-/*  cli();
+//  pinMode(10, INPUT);
+//  pinMode(11, INPUT);
+//  pinMode(6, INPUT);
+//  pinMode(7, INPUT);
+
+/*
+  cli();
   PCICR |= 0b00000101;
   PCMSK0 |= 0b00001100;
   PCMSK2 |= 0b11000000;
@@ -108,45 +87,69 @@ void setup() {
 
   Serial.begin(115200);
 
-//  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
-  display.begin(SSD1306_SWITCHCAPVCC);
+    Wire.begin();
+  Wire.setClock(400000);
 
+
+
+ // display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+    if(!display.begin(SSD1306_SWITCHCAPVCC)) {
+    Serial.println(F("SSD1306 allocation failed"));
+    for(;;); // Don't proceed, loop forever
+  }
+  // Show initial display buffer contents on the screen --
+  // the library initializes this with an Adafruit splash screen.
+  display.display();
+  delay(2000); // Pause for 2 seconds
+
+  // Clear the buffer
+  display.clearDisplay();
+
+  // Draw a single pixel in white
+  display.drawPixel(10, 10, SSD1306_WHITE);
+
+  // Show the display buffer on the screen. You MUST call display() after
+  // drawing commands to make them visible on screen!
+  display.display();
+  delay(2000);
+
+
+  
   pinMode(TRIGGER_OUT_PIN, OUTPUT);
+
   pinMode(LED_BUILTIN, OUTPUT);
 
   pinMode(CHANGE_CV_MODE_PIN, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(CHANGE_CV_MODE_PIN),
-                  change_cv_mode_ISR, FALLING);
+//  attachInterrupt(digitalPinToInterrupt(CHANGE_CV_MODE_PIN),
+//                  change_cv_mode_ISR, FALLING);
 
   pinMode(CHANGE_LAYOUT_PIN, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(CHANGE_LAYOUT_PIN),
-                  change_layout_ISR, FALLING);
+ // attachInterrupt(digitalPinToInterrupt(CHANGE_LAYOUT_PIN),
+ //                 change_layout_ISR, FALLING);
 
 
   digitalWrite(TRIGGER_OUT_PIN, LOW);
 
-  Wire.begin();
-  Wire.setClock(400000);
 
-  MCP.begin();
-  ADS.begin();
-  ADS.setGain(0);
 
-  display.display();
-  delay(2000);
-    display.drawPixel(10, 10, WHITE);
-  display.clearDisplay();
-  display.display();
+//  MCP.begin();
+//  ADS.begin();
+//  ADS.setGain(0);
+
+
+
+
+
 
   keyboard_layout = keyboard_layouts[layout_index];
 
-  if (tuning_dac) {
-    input_and_play_semitone();
-  }
+//  if (tuning_dac) {
+//    input_and_play_semitone();
+//  }
 
-  if (tuning_adc) {
-    print_adc();
-  }
+//  if (tuning_adc) {
+//    print_adc();
+//  }
 
 }
 
@@ -169,7 +172,8 @@ void loop() {
   uint8_t note_in_scale;
   uint8_t root_semitone;
 
-  int16_t cv_to_quantize = ADS.readADC(0);
+//  int16_t cv_to_quantize = ADS.readADC(0);
+    int16_t cv_to_quantize = 20000;
 
   Serial.println(cv_to_quantize);
 
@@ -228,7 +232,8 @@ void loop() {
 
   uint8_t semitone_index = current_root_semitone + semitones_above_root_in_scale;
 //  semitone_index = min(semitone_index, MAX_DAC_SEMITONE - 1);
-  MCP.setValue((int16_t)pgm_read_word_near(semitone_cvs_dac + semitone_index));
+    semitone_index = semitone_index;
+//  MCP.setValue((int16_t)pgm_read_word_near(semitone_cvs_dac + semitone_index));
 
 
   if (last_semitone_index != semitone_index) {
@@ -481,14 +486,11 @@ void drawKeyboard(int16_t scale, int8_t root, int8_t origin_key) {
 ////////////// End graphics ///////////////
 ///////////////////////////////////////////
 
-
+/*
 ///////////// KEY OF ISR
-//ISR(PCINT0_vect) {
-void handleEncoderInterrupt() { 
-
-  /*
-  D10D11_state = (D10D11_state << 1) | digitalRead(PA2);
-  D10D11_state = (D10D11_state << 1) | digitalRead(PA3);
+ISR(PCINT0_vect) {
+  D10D11_state = (D10D11_state << 1) | digitalRead(10);
+  D10D11_state = (D10D11_state << 1) | digitalRead(11);
 
 
   if ((D10D11_state & 0b1111) == 0b0111) {
@@ -504,35 +506,13 @@ void handleEncoderInterrupt() {
   }
 
   rotary_change = true;
-*/
-    // Read the current state of the encoder pins
-    int MSB = digitalRead(encoderPinA); // MSB = most significant bit
-    int LSB = digitalRead(encoderPinB); // LSB = least significant bit
-
-    int encoded = (MSB << 1) | LSB; // Combine the two pin values
-    int sum = (lastEncoded << 2) | encoded; // Calculate the change in the encoder state
-
-    // Determine the direction and update the position
-    if (sum == 0b1101 || sum == 0b0100 || sum == 0b0010 || sum == 0b1011) {
-          new_root += 1;
-//        encoderPosition++;
-    } else if (sum == 0b1110 || sum == 0b0111 || sum == 0b0001 || sum == 0b1000) {
-//        encoderPosition--;
-          new_root -= 1;
-    }
-  if (new_root == -1) {
-    new_root = NUM_NOTES - 1;
-  }
-    lastEncoded = encoded; // Store the current encoded value
-      rotary_change = true;
 }
 
 
-/*
 //////////// NEW SCALE ENCODER ISR
 ISR(PCINT2_vect) {
-  D6D7_state = (D6D7_state << 1) | digitalRead(PA5);
-  D6D7_state = (D6D7_state << 1) | digitalRead(PA6);
+  D6D7_state = (D6D7_state << 1) | digitalRead(6);
+  D6D7_state = (D6D7_state << 1) | digitalRead(7);
 
   if ((D6D7_state & 0b1111) == 0b0111) {
     new_scale += 1;
@@ -546,7 +526,7 @@ ISR(PCINT2_vect) {
     new_scale = NUM_SCALES - 1;
   }
 }
-*/
+
 
 void change_layout_ISR() {
   layout_index = (layout_index + 1) % 2;
@@ -558,7 +538,7 @@ void change_cv_mode_ISR() {
   refresh_little_indicator = true;
 }
 
-
+*/
 
 ///////////// Utilities //////////////
 
@@ -584,9 +564,9 @@ void print_adc() {
   display.println("       ADC");
   display.println("dval/d83mV");
   display.display();
-  for (;;) {
-    Serial.println(ADS.readADC(0));
-  }
+//  for (;;) {
+//    Serial.println(ADS.readADC(0));
+//  }
 }
 
 
@@ -619,7 +599,7 @@ void input_and_play_semitone() {
     }
     inData.trim(); // Eliminate \n, \r, blank and other not “printable”
     Serial.println();
-    MCP.setValue(inData.toInt());
+//    MCP.setValue(inData.toInt());
 
   }
 
