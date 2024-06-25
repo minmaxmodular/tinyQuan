@@ -1,5 +1,8 @@
+
 ///WORKKKIING
 
+#include "STM32encoder.h"
+STM32encoder enc(TIM2);
 
 
 //#include <avr/pgmspace.h>
@@ -71,27 +74,17 @@ void setup() {
 
   //////// ROTARY ENCODER INTERRUPTS AND PINS ////////
 
-//  pinMode(10, INPUT);
-//  pinMode(11, INPUT);
-//  pinMode(6, INPUT);
-//  pinMode(7, INPUT);
+  enc.setButton(PA2);					// set the button pin
+  enc.attachButton(&change_layout_ISR);		// attach button isr. Must be called after setButton
 
-/*
-  cli();
-  PCICR |= 0b00000101;
-  PCMSK0 |= 0b00001100;
-  PCMSK2 |= 0b11000000;
-  sei();
-*/
+
+
   ////////////////////////////////////////////////////
 
   Serial.begin(115200);
-
-    Wire.begin();
+  Wire.begin();
   Wire.setClock(400000);
-
-
-
+ 
  // display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
     if(!display.begin(SSD1306_SWITCHCAPVCC)) {
     Serial.println(F("SSD1306 allocation failed"));
@@ -119,26 +112,16 @@ void setup() {
 
   pinMode(LED_BUILTIN, OUTPUT);
 
-  pinMode(CHANGE_CV_MODE_PIN, INPUT_PULLUP);
+//  pinMode(CHANGE_CV_MODE_PIN, INPUT_PULLUP);
 //  attachInterrupt(digitalPinToInterrupt(CHANGE_CV_MODE_PIN),
 //                  change_cv_mode_ISR, FALLING);
 
-  pinMode(CHANGE_LAYOUT_PIN, INPUT_PULLUP);
+//  pinMode(CHANGE_LAYOUT_PIN, INPUT_PULLUP);
  // attachInterrupt(digitalPinToInterrupt(CHANGE_LAYOUT_PIN),
  //                 change_layout_ISR, FALLING);
 
 
   digitalWrite(TRIGGER_OUT_PIN, LOW);
-
-
-
-//  MCP.begin();
-//  ADS.begin();
-//  ADS.setGain(0);
-
-
-
-
 
 
   keyboard_layout = keyboard_layouts[layout_index];
@@ -165,6 +148,9 @@ void loop() {
   // Serial.print("cv_to_quantize:");
   // Serial.print(cv_to_quantize);
   // Serial.print("  ");
+
+
+
   uint8_t semitones_above_root_in_scale;
 
   uint16_t temp_scale_mask = current_scale_mask;
@@ -488,9 +474,10 @@ void drawKeyboard(int16_t scale, int8_t root, int8_t origin_key) {
 
 /*
 ///////////// KEY OF ISR
-ISR(PCINT0_vect) {
-  D10D11_state = (D10D11_state << 1) | digitalRead(10);
-  D10D11_state = (D10D11_state << 1) | digitalRead(11);
+//ISR(PCINT0_vect) {
+void change_root_direction() {
+  D10D11_state = (D10D11_state << 1) | digitalRead(PA0);
+  D10D11_state = (D10D11_state << 1) | digitalRead(PA1);
 
 
   if ((D10D11_state & 0b1111) == 0b0111) {
@@ -526,7 +513,7 @@ ISR(PCINT2_vect) {
     new_scale = NUM_SCALES - 1;
   }
 }
-
+*/
 
 void change_layout_ISR() {
   layout_index = (layout_index + 1) % 2;
@@ -538,7 +525,7 @@ void change_cv_mode_ISR() {
   refresh_little_indicator = true;
 }
 
-*/
+
 
 ///////////// Utilities //////////////
 
