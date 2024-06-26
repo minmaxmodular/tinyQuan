@@ -60,10 +60,13 @@ long int last_trigger_out_millis = millis();
 uint8_t volatile D10D11_state = 0b1111;
 uint8_t volatile D6D7_state = 0b1111;
 
-int8_t volatile new_root = 0;
-int8_t volatile new_scale = 0;
+//int8_t volatile new_root = 0;
+//int8_t volatile new_scale = 0;
+int16_t enc_value = 0;
+int16_t new_scale = 0;
+int16_t new_root = 0;
+bool volatile enc_mode = true;
 
-bool volatile rotary_change = false;
 //////////////////////////////////////
 
 void setup() {
@@ -73,6 +76,7 @@ void setup() {
   enc.setButton(PA2);					// set the button pin
   enc.attachButton(&change_layout_ISR);		// attach button isr. Must be called after setButton
   enc.attach(&change_root_ISR);
+  enc.bind(&enc_value, 1, 0, NUM_SCALES);
 
 
   ////////////////////////////////////////////////////
@@ -145,6 +149,34 @@ void loop() {
   // Serial.print(cv_to_quantize);
   // Serial.print("  ");
 
+
+  if (enc.isUpdated()) {
+	Serial.printf("new_scale: %i\n", new_scale);
+    if (enc_mode) {
+      new_scale = enc_value;
+      } else {
+      new_root = enc_value;
+    }
+
+    if (new_root == NUM_NOTES) {
+      new_root = 0;
+    }
+    if (new_root == -1) {
+      new_root = NUM_NOTES - 1;
+    }
+    if (new_scale == NUM_SCALES) {
+      new_scale = 0;
+    }
+    if (new_scale == -1) {
+      new_scale = NUM_SCALES - 1;
+    }
+  }
+  switch(enc.button()){     // read button and reset state
+    case BTN_EVT_CLICK:
+      enc_mode = !enc_mode;
+      Serial.printf("new scale ID: %u\n", enc_mode);
+    break;
+  }
 
 
   uint8_t semitones_above_root_in_scale;
@@ -487,7 +519,7 @@ void change_root_ISR() {
           new_root = NUM_NOTES - 1;
         }
 
-        rotary_change = true;
+        
  
     ) else if (enc_scale_mode == 0) {
         if (directr == 1) {
@@ -503,15 +535,21 @@ void change_root_ISR() {
         }
     }
 )
-*/
 
+*/
 
 void change_root_ISR() {
 //    direct_root = enc.dir();
+/*
 if (enc_scale_mode == true) {
   direct_root = enc.dir();
+} else if (enc_scale_mode == false) {
+  direct_scale = enc.dir();
 }
-    Serial.println(direct_root);
+*/
+/*
+  Serial.println(direct_root);
+    Serial.println(direct_scale);
   if (direct_root == 1) {
     new_root += 1;
   } else if (direct_root == 0) {
@@ -523,32 +561,22 @@ if (enc_scale_mode == true) {
   if (new_root == -1) {
     new_root = NUM_NOTES - 1;
   }
-
-  rotary_change = true;
-
-
-
-////////////////
-
-if (enc_scale_mode == false) {
-  direct_scale = enc.dir();
-}
+*/
+/*
     Serial.println(direct_scale);
   if (direct_scale == 1) {
     new_scale += 1;
   } else if (direct_scale == 0) {
     new_scale -= 1;
   }
-  if (new_scale == NUM_SCALES) {
-    new_scale = 0;
-  }
-  if (new_scale == -1) {
-    new_scale = NUM_SCALES - 1;
-  }
+*/
 
-///////////////////////
-
-
+ // if (new_scale == NUM_SCALES) {
+ //   new_scale = 0;
+ // }
+ // if (new_scale == -1) {
+ //   new_scale = NUM_SCALES - 1;
+ // }
 
 }
 
@@ -578,7 +606,7 @@ if (enc_scale_mode == 1) {
 void change_layout_ISR() {
 //  layout_index = (layout_index + 1) % 2;
 //  refresh_layout = true;
-  enc_scale_mode = !enc_scale_mode;
+//  enc_mode = !enc_mode;
 }
 
 void change_cv_mode_ISR() {
