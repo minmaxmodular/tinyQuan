@@ -1,6 +1,6 @@
 
 ///WORKKKIING
-
+#include <timer.h>
 #include "STM32encoder.h"
 STM32encoder enc(TIM2, 0x07);
 
@@ -67,9 +67,17 @@ int16_t new_scale = 0;
 int16_t new_root = 0;
 bool volatile enc_mode = true;
 
-//////////////////////////////////////
+HardwareTimer pwmtimer3(3);
+//  HardwareTimer *pwmtimer3 = new HardwareTimer(TIM3); 
+////////////////////////////////////////////////////////////////////////////
 
 void setup() {
+
+  pwmtimer3.pause();
+  pwmtimer3.setPrescaleFactor(1);
+  pwmtimer3.setOverflow(120);
+  pwmtimer3.refresh();
+  pwmtimer3.resume();
 
   //////// ROTARY ENCODER INTERRUPTS AND PINS ////////
 

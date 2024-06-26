@@ -11,7 +11,7 @@
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
 //#define OLED_RESET     4 // Reset pin # (or -1 if sharing Arduino reset pin)
 
-
+/*
 #define MAX_DAC_SEMITONE 61
 const int16_t PROGMEM semitone_cvs_dac[MAX_DAC_SEMITONE] = {
 // 0     83.3  166.6  250   333   416.6  500  583.3  666.6  750   833.3  916.6
@@ -22,6 +22,23 @@ const int16_t PROGMEM semitone_cvs_dac[MAX_DAC_SEMITONE] = {
   3278, 3344, 3412,  3480, 3549, 3617,  3685, 3754, 3822,  3892, 3960,  4026,
   4093
 };
+*/
+#define MAX_DAC_SEMITONE 121
+const int16_t PROGMEM semitone_cvs_dac[MAX_DAC_SEMITONE] = {
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+    10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+    20, 21, 22, 23, 24, 25, 26, 27, 28, 29,
+    30, 31, 32, 33, 34, 35, 36, 37, 38, 39,
+    40, 41, 42, 43, 44, 45, 46, 47, 48, 49,
+    50, 51, 52, 53, 54, 55, 56, 57, 58, 59,
+    60, 61, 62, 63, 64, 65, 66, 67, 68, 69,
+    70, 71, 72, 73, 74, 75, 76, 77, 78, 79,
+    80, 81, 82, 83, 84, 85, 86, 87, 88, 89,
+    90, 91, 92, 93, 94, 95, 96, 97, 98, 99,
+    100, 101, 102, 103, 104, 105, 106, 107, 108, 109,
+    110, 111, 112, 113, 114, 115, 116, 117, 118, 119,
+    120
+};
 
 
 
@@ -29,14 +46,19 @@ const int16_t PROGMEM semitone_cvs_dac[MAX_DAC_SEMITONE] = {
 // Techically the ADC can distinguish amongst 63 semitones, but the DAC can
 // only produce 57 because of the power of my USB port
 
-#define CV_0V_BOUNDARY_INCLUSIVE -32
-#define CV_ABOVE_5V_BOUNDARY_EXCLUSIVE 26832
-#define NB_ADC_BOUNDARIES 62
+//#define CV_0V_BOUNDARY_INCLUSIVE -32
+//#define CV_ABOVE_5V_BOUNDARY_EXCLUSIVE 26832
+//#define NB_ADC_BOUNDARIES 62
+#define CV_0V_BOUNDARY_INCLUSIVE -17
+#define CV_ABOVE_5V_BOUNDARY_EXCLUSIVE 4063
+#define NB_ADC_BOUNDARIES 122
+
 
 // ADS1015 maps 6.14 at 32767, but we stop at 5V to stay within standards.
 // These are the inter CVs ADC reading, i.e. we round CVs by placing boundaries
 // at 1/24V left and right of the CV associated with a semitone,
 // in other words if you are within k*83.3mV ± 41.6mV then bin CV into k
+/*
 const int16_t PROGMEM inter_semitonecv_to_ADC16read[NB_ADC_BOUNDARIES] = {
         -240,   208,   656,  1104,  1544,  1984,  2432,  2880,  3328,  3776,  4216,  4656,
         5096,  5544,  5992,  6432,  6872,  7320,  7776,  8216,  8648,  9088,  9536,  9984,
@@ -46,6 +68,25 @@ const int16_t PROGMEM inter_semitonecv_to_ADC16read[NB_ADC_BOUNDARIES] = {
        26432, // 26880,
        32765
 };
+*/
+const int16_t PROGMEM inter_semitonecv_to_ADC16read[NB_ADC_BOUNDARIES] = {
+    -17, 17, 51, 85, 119, 153, 187, 221, 255, 289,
+    323, 357, 391, 425, 459, 493, 527, 561, 595, 629,
+    663, 697, 731, 765, 799, 833, 867, 901, 935, 969,
+    1003, 1037, 1071, 1105, 1139, 1173, 1207, 1241, 1275, 1309,
+    1343, 1377, 1411, 1445, 1479, 1513, 1547, 1581, 1615, 1649,
+    1683, 1717, 1751, 1785, 1819, 1853, 1887, 1921, 1955, 1989,
+    2023, 2057, 2091, 2125, 2159, 2193, 2227, 2261, 2295, 2329,
+    2363, 2397, 2431, 2465, 2499, 2533, 2567, 2601, 2635, 2669,
+    2703, 2737, 2771, 2805, 2839, 2873, 2907, 2941, 2975, 3009,
+    3043, 3077, 3111, 3145, 3179, 3213, 3247, 3281, 3315, 3349,
+    3383, 3417, 3451, 3485, 3519, 3553, 3587, 3621, 3655, 3689,
+    3723, 3757, 3791, 3825, 3859, 3893, 3927, 3961, 3995, 4029,
+    4063, 4097
+};
+
+
+
 
 #define NUM_NOTES 12
 #define NUM_SCALES 120
